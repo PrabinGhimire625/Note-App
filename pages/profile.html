@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profile</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      /* Custom CSS for profile details */
+      #profile-details {
+        width: 500px;
+        height: 300px;
+        background-color: #f8f9fa; /* Light grey background color */
+        border-radius: 10px;
+        margin: 0 auto; /* Center horizontally */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+      }
+      #profile-details .btn-container {
+        margin-top: 10px; /* Add some space between email and buttons */
+        display: flex;
+        gap: 10px; /* Space between buttons */
+      }
+    </style>
+  </head>
+  <body>
+
+    <!--navbar start here-->
+    <nav class="navbar navbar-dark navbar-expand-lg bg-dark">
+      <div class="container-fluid">       
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+              <a class="nav-link active" aria-current="page" href="/">Home</a>
+            </li>             
+          </ul>
+        
+        </div>
+      </div>
+    </nav>
+   <!--navbar end here-->
+   
+     <!--profile div-->
+     <div class="container">
+      <h1 class="text-center">My Profile</h1>
+      <div id="profile-details" class="text-center"></div>
+    </div>
+
+    <!-- Modal/div for Edit Profile -->
+    <div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="editProfileModalLabel">Edit Profile</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="container">
+              <h1>Edit Profile</h1>
+              <div>
+                <div class="my-4">
+                  <label for="email" class="form-label">Email address</label>
+                  <input
+                    type="email"
+                    class="form-control"
+                    id="email"
+                    aria-describedby="email"
+                  />
+                  <div id="emailHelp" class="form-text" style="font-size: 14px;">
+                    We'll never share your email with anyone else.
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label for="password" class="form-label">Password</label>
+                  <input type="password" class="form-control" id="password" />
+                </div>
+                <button id="update-profile" type="submit" class="btn btn-primary">
+                  Update
+                </button>
+                <div id="error-msg" class="text-danger"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!--Javascripts for profile pages-->
+    <script>
+      document.addEventListener("DOMContentLoaded", async () => {
+        const user = JSON.parse(localStorage.getItem("user"));
+        if (user && user.email) {
+          const profileDetails = document.getElementById("profile-details");
+          profileDetails.innerHTML = `
+            <p><strong>Email:</strong> ${user.email}</p>
+            <div class="btn-container">
+              <button id="edit-profile" class="btn btn-primary">Edit</button>
+              <button id="delete-profile" class="btn btn-primary">Delete</button>
+            </div>
+          `;
+          // Add event listener to delete profile button
+          document
+            .getElementById("delete-profile")
+            .addEventListener("click", async () => {
+              const confirmation = confirm(
+                "Are you sure you want to delete your profile?"
+              );
+              if (confirmation) {
+                try {
+                  const response = await fetch("/deleteUserProfile", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ email: user.email }),
+                  });
+                  const data = await response.json();
+                  if (data.success) {
+                    alert("Profile deleted successfully");
+                    localStorage.removeItem("user");
+                    window.location.href = "/";
+                  } else {
+                    alert("Failed to delete profile");
+                  }
+                } catch (error) {
+                  console.error("Error:", error);
+                  alert("An error occurred while deleting the profile");
+                }
+              }
+            });
+
+          // Add event listener to edit profile button
+          document
+            .getElementById("edit-profile")
+            .addEventListener("click", () => {
+              document.getElementById("email").value = user.email;
+              new bootstrap.Modal(document.getElementById("editProfileModal")).show();
+            });
+
+          // Add event listener to update profile button
+          document
+            .getElementById("update-profile")
+            .addEventListener("click", async () => {
+              const email = document.getElementById("email").value;
+              const password = document.getElementById("password").value;
+              // Clear previous error messages
+              document.getElementById("error-msg").textContent = "";
+
+              // Validate email format
+              if (!validateEmail(email)) {
+                document.getElementById("error-msg").textContent =
+                  "Invalid email format. @ must be included.";
+                return;
+              }
+
+              // Validate password length
+              if (!validatePassword(password)) {
+                document.getElementById("error-msg").textContent =
+                  "Password must be at least 6 characters long.";
+                return;
+              }
+
+              let resp = await postData("/updateUserProfile", { oldEmail: user.email, email, password });
+              if (resp.success) {
+                alert("Profile updated successfully.");
+                localStorage.setItem("user", JSON.stringify({ email }));
+                document.getElementById("profile-details").innerHTML = `
+                  <p><strong>Email:</strong> ${email}</p>
+                  <div class="btn-container">
+                    <button id="edit-profile" class="btn btn-primary">Edit</button>
+                    <button id="delete-profile" class="btn btn-primary">Delete</button>
+                  </div>
+                `;
+                window.location.href = "/profile";   //redirect to profile pages after sucessfully update profile
+                // Add event listeners again
+                document
+                  .getElementById("edit-profile")
+                  .addEventListener("click", () => {
+                    document.getElementById("email").value = email;
+                    new bootstrap.Modal(document.getElementById("editProfileModal")).show();
+                  });
+                document
+                  .getElementById("delete-profile")
+                  .addEventListener("click", async () => {
+                    const confirmation = confirm(
+                      "Are you sure you want to delete your profile?"
+                    );
+                    if (confirmation) {
+                      try {
+                        const response = await fetch("/deleteUserProfile", {
+                          method: "POST",
+                          headers: {
+                            "Content-Type": "application/json",
+                          },
+                          body: JSON.stringify({ email }),
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                          alert("Profile deleted successfully");
+                          localStorage.removeItem("user");
+                          window.location.href = "/";
+                        } else {
+                          alert("Failed to delete profile");
+                        }
+                      } catch (error) {
+                        console.error("Error:", error);
+                        alert("An error occurred while deleting the profile");
+                      }
+                    }
+                  });
+              } else {
+                document.getElementById("error-msg").textContent = resp.message;
+              }
+            });
+        } else {
+          alert("Please login first");
+          window.location.href = "/login";
+        }
+      });
+
+      async function postData(url = "", data = {}) {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data), // body data type must match "Content-Type" header
+        });
+        let rdata = await response.json();
+        return rdata;
+      }
+
+      // Function to validate email format
+      function validateEmail(email) {
+        const regex = /\S+@\S+\.\S+/;
+        return regex.test(email);
+      }
+
+      // Function to validate password length
+      function validatePassword(password) {
+        return password.length >= 6; // Minimum password length of 6 characters
+      }   
+    </script>
+  </body>
+</html>

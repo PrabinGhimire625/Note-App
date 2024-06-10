@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Signup</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous"
+    />
+    <style>
+        body {
+        background-image: url('/image1.png');
+        background-size: cover;
+        background-repeat: no-repeat;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        font-size: 24px;
+      }
+      .center-search {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar navbar-dark navbar-expand-lg bg-dark">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="/">Signup</a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarSupportedContent"
+          aria-controls="navbarSupportedContent"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+              <a class="nav-link active" aria-current="page" href="/">Home</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/">About</a>
+            </li>
+            <li class="nav-item dropdown">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                File
+              </a>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#">New</a></li>
+                <li><a class="dropdown-item" href="#">Open</a></li>
+                <li>
+                  <hr class="dropdown-divider" />
+                  Save As
+                </li>
+                <li><a class="dropdown-item" href="#">Exit</a></li>
+              </ul>
+            </li>
+            <li class="nav-item"></li>
+          </ul>
+
+          <form class="d-flex center-search" role="search">
+            <input
+              class="form-control me-2"
+              type="search"
+              placeholder="Search"
+              aria-label="Search"
+            />
+            <button
+              class="btn btn-outline-success border-white text-white"
+              type="submit"
+            >
+              Search
+            </button>
+          </form>
+          <div class="login ms-auto">
+            <a href="/login"
+              ><button class="btn btn-primary mx-2" type="submit">
+                Login
+              </button></a
+            >
+            <a href="/signup"
+              ><button class="btn btn-primary mx-2" type="submit">
+                Signup
+              </button></a
+            >
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container">
+      <h1>Sign up pages</h1>
+      <div>
+        <div class="my-4">
+          <label for="email" class="form-label">Email address</label>
+          <input
+            type="email"
+            class="form-control"
+            id="email"
+            aria-describedby="email"
+          />
+          <div id="emailHelp" class="form-text" style="font-size: 14px;">
+            We'll never share your email with anyone else.
+          </div>
+        </div>
+        <div class="mb-3">
+          <label for="password" class="form-label">Password</label>
+          <input type="password" class="form-control" id="password" />
+        </div>
+        <!-- <div class="mb-3">
+          <label for="profile-image" class="form-label">Profile Image</label>
+          <input type="file" class="form-control" id="profile-image" accept="image/*" />
+        </div>         -->
+        <button id="signup" type="submit" class="btn btn-primary">
+          Signup
+        </button>
+        <div id="error-msg" class="text-danger"></div>
+        <!-- Error message container -->
+      </div>
+    </div>
+<!--Javascripts part-->
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+      crossorigin="anonymous"
+    ></script>
+    <script>
+      async function postData(url = "", data = {}) {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data), // body data type must match "Content-Type" header
+        });
+        let rdata = await response.json();
+        return rdata;
+      }
+
+      // Function to validate email format
+      function validateEmail(email) {
+        const regex = /\S+@\S+\.\S+/;
+        return regex.test(email);
+      }
+
+      // Function to validate password length
+      function validatePassword(password) {
+        return password.length >= 6; // Minimum password length of 6 characters
+      }
+
+      document.getElementById("signup").addEventListener("click", async () => {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+
+        // Clear previous error messages
+        document.getElementById("error-msg").textContent = "";
+
+        // Validate email format
+        if (!validateEmail(email)) {
+          document.getElementById("error-msg").textContent =
+            "Invalid email format. @ must be included.";
+          return;
+        }
+
+        // Validate password length
+        if (!validatePassword(password)) {
+          document.getElementById("error-msg").textContent =
+            "Password must be at least 6 characters long.";
+          return;
+        }
+
+        let resp = await postData("/signup", { email, password });
+        if (resp.success) {
+          alert("User is created. You can now login to saved the notes!.");
+          // Clear input fields
+          document.getElementById("email").value = "";
+          document.getElementById("password").value = "";
+        } else {
+          document.getElementById("error-msg").textContent = resp.message;
+        }
+      });
+    </script>
+  </body>
+</html>
